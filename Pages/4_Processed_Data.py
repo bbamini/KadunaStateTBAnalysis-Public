@@ -39,8 +39,30 @@ block2c_complete = pd.read_csv("Datasets/block2c/block2c_19_to_23_complete.csv",
 block2d_complete = pd.read_csv("Datasets/block2d/block2d_19_to_23_complete.csv", index_col=0)
 block2e_complete = pd.read_csv("Datasets/block2e/block2e_19_to_23_complete.csv", index_col=0)
 
+facilities = (
+    pd.read_excel("Datasets/Misc/TB_all_facility.xlsx", index_col=False)
+    .drop(
+           columns=['serial_number',
+                    'the_total_tb_cases_is_equal_to_total_ptb_eptb_cases',
+                    'type_of_facility_select_one_of_phc_secondary_tertiary_pfp_fbo']
+    )
+)
+first_cols = ['year', 'quarter', 'lga', 'name_of_facility', 'lat', 'lon']
+last_cols = [col for col in facilities.columns if col not in first_cols]
+facilities = facilities[first_cols+last_cols]
+facilities.columns = [(c.replace("x_ray", "X-Ray")
+                       .replace("_", " ")
+                       .title()
+                       .replace("Hiv", "HIV")
+                       .replace("Tb Lamp Lf Lam", "TB Lamp/LF-LAM")
+                       .replace("Tb", "TB")
+                       .replace("Eptb", "EPTB")
+                       .replace("Hc", "HC")
+                       .replace("Lga", "LGA"))
+                      for c in facilities.columns.values.tolist()]
+
 block_type = st.radio('Select a data block to load:',
-                        options = ('block1a', 'block2a', 'block2b', 'block2c', 'block2d', 'block2e'),
+                        options = ('block1a', 'block2a', 'block2b', 'block2c', 'block2d', 'block2e', 'facilities'),
                         horizontal = True)
 
 df_dict = {
@@ -50,6 +72,7 @@ df_dict = {
     'block2c': block2c_complete,
     'block2d': block2d_complete,
     'block2e': block2e_complete,
+    'facilities': facilities
 }
 
 st.data_editor(df_dict[block_type])
@@ -140,6 +163,18 @@ with st.expander("Download the Datasets here"):
         label="Download block2e",
         data=converted_block2e,
         file_name='block2e_processed.csv',
+        mime='text/csv',
+    )
+    
+    
+    st.subheader('Facilities: Detailed Activities of TB Cases by Healthcare Facilities', divider='grey')
+    st.caption("Data from 2019 to 2023")
+    converted_facilities = convert_df(facilities)
+    
+    st.download_button(
+        label="Download Facilities",
+        data=converted_facilities,
+        file_name='tb_facilities.csv',
         mime='text/csv',
     )
 
